@@ -272,6 +272,22 @@ PROCESS_THREAD(net_uart_process, ev, data)
 
   while(1) {
 
+    //Begin Hudson Paste insert
+    printf("In this while loop\n");
+    memset(buffer, 0, MAX_MSG_SIZE);
+    data = "hey its hudson sending a longish message just to check";
+    /* We need to add a line feed, thus never fill the entire buffer */
+    msg_len = MIN(strlen(data), MAX_MSG_SIZE - 1);
+    printf("msg_len is %d\n", msg_len);
+    memcpy(buffer, data, msg_len);
+    /* Add a line feed */
+    buffer[msg_len] = 0x0A;
+    msg_len++;
+    printf("Sending packet now\n");
+    uip_udp_packet_sendto(udp_conn, buffer, msg_len, &remote_addr,
+                          UIP_HTONS(cc26xx_web_demo_config.net_uart.remote_port));
+   // End Hudson Paste
+
     PROCESS_YIELD();
 
     if(ev == serial_line_event_message) {

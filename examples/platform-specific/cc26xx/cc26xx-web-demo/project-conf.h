@@ -34,17 +34,17 @@
 /* Change to match your configuration */
 #define IEEE802154_CONF_PANID            0xABCD
 #define RF_CORE_CONF_CHANNEL                 26
-#define RF_BLE_CONF_ENABLED                   1
+#define RF_BLE_CONF_ENABLED                   0
 /*---------------------------------------------------------------------------*/
 
 /* Enable TCP */
-#define UIP_CONF_TCP 1
+#define UIP_CONF_TCP 0
 
 /* Enable/Disable Components of this Demo */
-#define CC26XX_WEB_DEMO_CONF_MQTT_CLIENT      1
+#define CC26XX_WEB_DEMO_CONF_MQTT_CLIENT      0
 #define CC26XX_WEB_DEMO_CONF_6LBR_CLIENT      ROUTING_CONF_RPL_CLASSIC
-#define CC26XX_WEB_DEMO_CONF_COAP_SERVER      1
-#define CC26XX_WEB_DEMO_CONF_NET_UART         1
+#define CC26XX_WEB_DEMO_CONF_COAP_SERVER      0
+#define CC26XX_WEB_DEMO_CONF_NET_UART         0
 
 /*
  * ADC sensor functionality. To test this, an external voltage source should be
@@ -60,7 +60,7 @@
  * Shrink the size of the uIP buffer, routing table and ND cache.
  * Set the TCP MSS
  */
-#define UIP_CONF_BUFFER_SIZE                500
+#define UIP_CONF_BUFFER_SIZE               1280
 #define NETSTACK_MAX_ROUTE_ENTRIES            5
 #define NBR_TABLE_CONF_MAX_NEIGHBORS          5
 #define UIP_CONF_TCP_MSS                    128

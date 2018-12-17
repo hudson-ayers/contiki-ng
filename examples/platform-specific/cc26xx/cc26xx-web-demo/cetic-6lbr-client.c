@@ -182,6 +182,7 @@ PROCESS_THREAD(cetic_6lbr_client_process, ev, data)
   PROCESS_BEGIN();
 
   printf("6LBR Client Process\n");
+  timeout_handler();
 
   memset(&dest_addr, 0, sizeof(uip_ipaddr_t));
 

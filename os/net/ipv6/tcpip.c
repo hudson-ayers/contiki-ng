@@ -517,7 +517,9 @@ get_nexthop(uip_ipaddr_t *addr)
   /* We first check if the destination address is on our immediate
      link. If so, we simply use the destination address as our
      nexthop address. */
-  if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)) {
+  //if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)) {
+  if(true) { //Skip building a routing table (for now)
+      //HTODO: remove RPL entirely from example
     LOG_INFO("output: destination is on link\n");
     return &UIP_IP_BUF->destipaddr;
   }
@@ -649,6 +651,7 @@ tcpip_ipv6_output(void)
     goto exit;
   }
 
+
   if(uip_is_addr_unspecified(&UIP_IP_BUF->destipaddr)){
     LOG_ERR("output: Destination address unspecified");
     goto exit;
@@ -681,7 +684,11 @@ tcpip_ipv6_output(void)
   }
   annotate_transmission(nexthop);
 
+  //Send packet from here to skip routing
   nbr = uip_ds6_nbr_lookup(nexthop);
+  linkaddr = uip_ds6_nbr_get_ll(nbr);
+  printf("calling tcpip_output early\n");
+  tcpip_output(linkaddr);
 
 #if UIP_ND6_AUTOFILL_NBR_CACHE
   if(nbr == NULL) {
@@ -739,6 +746,7 @@ send_packet:
   LOG_INFO("output: sending to ");
   LOG_INFO_LLADDR((linkaddr_t *)linkaddr);
   LOG_INFO_("\n");
+  printf("calling tcpip_output\n");
   tcpip_output(linkaddr);
 
   if(nbr) {

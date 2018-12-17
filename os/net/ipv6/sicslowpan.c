@@ -177,6 +177,8 @@
  */
 static uint8_t *packetbuf_ptr;
 
+uint8_t send_count = 0; //For counting number of messages sent
+
 /**
  * packetbuf_hdr_len is the total length of (the processed) 6lowpan headers
  * (fragment headers, IPV6 or HC1, HC2, and HC1 and HC2 non compressed
@@ -1532,8 +1534,12 @@ output(const linkaddr_t *localdest)
    * packet. If the argument localdest is NULL, we are sending a
    * broadcast packet.
    */
+  linkaddr_t dest_mac;
+  static unsigned char temp_mac[LINKADDR_SIZE] = {0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A};
+  memcpy(dest_mac.u8, temp_mac, LINKADDR_SIZE);
   if(localdest == NULL) {
-    linkaddr_copy(&dest, &linkaddr_null);
+    //linkaddr_copy(&dest, &linkaddr_null);
+    linkaddr_copy(&dest, &dest_mac);
   } else {
     linkaddr_copy(&dest, localdest);
   }
@@ -1717,6 +1723,10 @@ output(const linkaddr_t *localdest)
     packetbuf_set_datalen(uip_len - uncomp_hdr_len + packetbuf_hdr_len);
     send_packet(&dest);
   }
+  if(send_count > 1) {
+    while(1);
+  }
+  send_count += 1; //Spin forever after sending a single packet
   return 1;
 }
 

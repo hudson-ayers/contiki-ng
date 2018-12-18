@@ -47,7 +47,16 @@
 #include <string.h>
 #include <stdio.h>
 /*---------------------------------------------------------------------------*/
-#define DEBUG 0
+// Debug code borrowed from arch/cpu/..
+#define DEBUG 1
+#if DEBUG
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
+/*---------------------------------------------------------------------------*/
+
+//#define DEBUG 1
 #include "net/ipv6/uip-debug.h"
 /*---------------------------------------------------------------------------*/
 #ifndef CETIC_6LBR_NODE_INFO_PORT

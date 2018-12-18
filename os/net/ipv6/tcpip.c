@@ -689,6 +689,7 @@ tcpip_ipv6_output(void)
   linkaddr = uip_ds6_nbr_get_ll(nbr);
   printf("calling tcpip_output early\n");
   tcpip_output(linkaddr);
+  goto exit;
 
 #if UIP_ND6_AUTOFILL_NBR_CACHE
   if(nbr == NULL) {

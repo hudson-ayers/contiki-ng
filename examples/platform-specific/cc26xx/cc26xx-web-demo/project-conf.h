@@ -38,13 +38,24 @@
 /*---------------------------------------------------------------------------*/
 
 /* Enable TCP */
-#define UIP_CONF_TCP 0
+#define UIP_CONF_TCP 1
+
+/* Disable IPHC compression */
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
+
+/* Enable Logging */
+#define LOG_CONF_LEVEL_TCPIP LOG_LEVEL_DBG
+#define LOG_CONF_LEVL_6LOWPAN LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_IPV6 LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_FRAMER LOG_LEVEL_DBG
+
 
 /* Enable/Disable Components of this Demo */
 #define CC26XX_WEB_DEMO_CONF_MQTT_CLIENT      0
 #define CC26XX_WEB_DEMO_CONF_6LBR_CLIENT      ROUTING_CONF_RPL_CLASSIC
 #define CC26XX_WEB_DEMO_CONF_COAP_SERVER      0
-#define CC26XX_WEB_DEMO_CONF_NET_UART         0
+#define CC26XX_WEB_DEMO_CONF_NET_UART         1
 
 /*
  * ADC sensor functionality. To test this, an external voltage source should be

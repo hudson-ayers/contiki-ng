@@ -78,12 +78,12 @@
 #define DEBUG DEBUG_NONE
 #include "net/ipv6/uip-debug.h"
 /*---------------------------------------------------------------------------*/
-#define REMOTE_PORT  7777
-#define MAX_MSG_SIZE  100
+#define REMOTE_PORT 64318
+#define MAX_MSG_SIZE  150
 
 #define set_dest_addr() uip_ip6addr(&remote_addr, \
-                                    0xBBBB, 0x0000, 0x0000, 0x0000, \
-                                    0x3E07, 0x54FF, 0xFE74, 0x4885);
+                                    0x1011, 0x1213, 0x1415, 0x1617, \
+                                    0x1819, 0x1a1b, 0x1c1d, 0x1e1f);
 /*---------------------------------------------------------------------------*/
 #define ADDRESS_CONVERSION_OK       1
 #define ADDRESS_CONVERSION_ERROR    0
@@ -275,7 +275,7 @@ PROCESS_THREAD(net_uart_process, ev, data)
     //Begin Hudson Paste insert
     printf("In this while loop\n");
     memset(buffer, 0, MAX_MSG_SIZE);
-    data = "hey its hudson sending a longish message just to check";
+    data = "hey its hudson sending a longish message just to check. And now even longer bc I want multiple fragments!";
     /* We need to add a line feed, thus never fill the entire buffer */
     msg_len = MIN(strlen(data), MAX_MSG_SIZE - 1);
     printf("msg_len is %d\n", msg_len);

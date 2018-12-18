@@ -1535,6 +1535,7 @@ output(const linkaddr_t *localdest)
    * broadcast packet.
    */
   linkaddr_t dest_mac;
+  /* Hardcoded MAC addr to simplify away RPL code etc. */
   static unsigned char temp_mac[LINKADDR_SIZE] = {0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A};
   memcpy(dest_mac.u8, temp_mac, LINKADDR_SIZE);
   if(localdest == NULL) {
@@ -1867,21 +1868,25 @@ input(void)
   }
 
   /* Process next dispatch and headers */
+#if SICSLOWPAN_COMPRESSION > SICSLOWPAN_COMPRESSION_IPV6
   if((PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH] & SICSLOWPAN_DISPATCH_IPHC_MASK) == SICSLOWPAN_DISPATCH_IPHC) {
     LOG_INFO("input: IPHC\n");
     uncompress_hdr_iphc(buffer, frag_size);
-  } else if(PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH] == SICSLOWPAN_DISPATCH_IPV6) {
-    LOG_INFO("input: IPV6\n");
-    packetbuf_hdr_len += SICSLOWPAN_IPV6_HDR_LEN;
-
-    /* Put uncompressed IP header in sicslowpan_buf. */
-    memcpy(buffer, packetbuf_ptr + packetbuf_hdr_len, UIP_IPH_LEN);
-
-    /* Update uncomp_hdr_len and packetbuf_hdr_len. */
-    packetbuf_hdr_len += UIP_IPH_LEN;
-    uncomp_hdr_len += UIP_IPH_LEN;
   } else {
-    LOG_ERR("input: unknown dispatch: 0x%02x\n",
+#endif /* SICSLOWPAN_COMPRESSION > SICSLOWPAN_COMPRESSION_IPV6 */
+    if(PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH] == SICSLOWPAN_DISPATCH_IPV6) {
+      LOG_INFO("input: IPV6\n");
+      packetbuf_hdr_len += SICSLOWPAN_IPV6_HDR_LEN;
+
+      /* Put uncompressed IP header in sicslowpan_buf. */
+      memcpy(buffer, packetbuf_ptr + packetbuf_hdr_len, UIP_IPH_LEN);
+
+      /* Update uncomp_hdr_len and packetbuf_hdr_len. */
+      packetbuf_hdr_len += UIP_IPH_LEN;
+      uncomp_hdr_len += UIP_IPH_LEN;
+
+  } else {
+    LOG_ERR("input: unknown dispatch: 0x%02x, or IPHC disabled\n",
              PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH]);
     return;
   }

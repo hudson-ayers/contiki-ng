@@ -1,6 +1,12 @@
 CONTIKI_PROJECT = cc26xx-web-demo
 all: $(CONTIKI_PROJECT)
 
+# Include below comment to save preprocessed files for analysis
+# CFLAGS += -save-temps
+# Get capability level from environment variable so my script to
+# get size for all levels works
+CFLAGS += -DCAPABILITY_LEVEL=$(CAP_LEVEL)
+
 PLATFORMS_ONLY = srf06-cc26xx
 
 MODULES_REL += ./resources

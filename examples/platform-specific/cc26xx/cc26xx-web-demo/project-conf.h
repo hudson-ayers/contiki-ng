@@ -40,9 +40,63 @@
 /* Enable TCP */
 #define UIP_CONF_TCP 1
 
+/*---------------------------------------------------------------------------*/
+
+#define SICSLOWPAN_CONF_FRAG 1 // Could make a level with no frag..?
+
+// Comment in the line below to set the capability level here instead of
+// via the environment variable that is pulled into the Makefile
+//#define CAPABILITY_LEVEL 1
+
+/* Capability Spectrum */
+#if CAPABILITY_LEVEL == 0
 /* Disable IPHC compression */
 #define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
 
+#elif CAPABILITY_LEVEL == 1
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+#define SICSLOWPAN_CONF_COMPRESS_EXT_HDR 0
+#define SICSLOWPAN_CONF_COMPRESS_UDP 0
+#define SICSLOWPAN_CONF_COMP_TC_FL_HL 0
+#define SICSLOWPAN_CONF_STATEFUL_COMP 0
+
+#elif CAPABILITY_LEVEL == 2
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+#define SICSLOWPAN_CONF_COMPRESS_EXT_HDR 0
+#define SICSLOWPAN_CONF_COMPRESS_UDP 0
+#define SICSLOWPAN_CONF_COMP_TC_FL_HL 0
+#define SICSLOWPAN_CONF_STATEFUL_COMP 1
+
+
+#elif CAPABILITY_LEVEL == 3
+
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+#define SICSLOWPAN_CONF_COMPRESS_EXT_HDR 0
+#define SICSLOWPAN_CONF_COMPRESS_UDP 0
+#define SICSLOWPAN_CONF_COMP_TC_FL_HL 1
+#define SICSLOWPAN_CONF_STATEFUL_COMP 1
+// TODO: Tunneled IPv6, headers longer than first fragment
+
+#elif CAPABILITY_LEVEL == 4
+
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+#define SICSLOWPAN_CONF_COMPRESS_EXT_HDR 0
+#define SICSLOWPAN_CONF_COMPRESS_UDP 1
+#define SICSLOWPAN_CONF_COMP_TC_FL_HL 1
+#define SICSLOWPAN_CONF_STATEFUL_COMP 1
+
+#elif CAPABILITY_LEVEL == 5
+// Notably, Contiki does not support the mesh or broadcast header anyway
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+//#define IPHC_EXTENSION_COMPRESSION 1
+#define SICSLOWPAN_CONF_COMPRESS_EXT_HDR 1
+#define SICSLOWPAN_CONF_COMPRESS_UDP 1
+#define SICSLOWPAN_CONF_COMP_TC_FL_HL 1
+#define SICSLOWPAN_CONF_STATEFUL_COMP 1
+
+#endif /* Capability Spectrum */
+
+/*---------------------------------------------------------------------------*/
 /* Enable Logging */
 #define LOG_CONF_LEVEL_TCPIP LOG_LEVEL_DBG
 #define LOG_CONF_LEVL_6LOWPAN LOG_LEVEL_DBG

@@ -75,6 +75,7 @@
 #include "net/queuebuf.h"
 
 #include "net/routing/routing.h"
+#include "net/ipv6/uip-icmp6.h"
 
 /* Log configuration */
 #include "sys/log.h"
@@ -126,6 +127,7 @@
 #define UIP_UDP_BUF(p)          ((struct uip_udp_hdr *)&uip_buf[UIP_LLIPH_LEN + p])
 #define UIP_TCP_BUF          ((struct uip_tcp_hdr *)&uip_buf[UIP_LLIPH_LEN])
 #define UIP_ICMP_BUF          ((struct uip_icmp_hdr *)&uip_buf[UIP_LLIPH_LEN])
+#define UIP_ICMP_PAYLOAD ((unsigned char *)&uip_buf[uip_l2_l3_icmp_hdr_len])
 #define UIP_IPPAYLOAD_BUF(pos)          (&uip_buf[UIP_LLIPH_LEN + pos])
 
 /** @} */
@@ -281,6 +283,8 @@ struct sicslowpan_frag_info {
 };
 
 static struct sicslowpan_frag_info frag_info[SICSLOWPAN_REASS_CONTEXTS];
+
+void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code);
 
 struct sicslowpan_frag_buf {
   /* the index of the frag_info */
@@ -1114,6 +1118,7 @@ static void
 uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
 {
   uint8_t tmp, iphc0, iphc1, nhc;
+  bool decompression_failed = false;
 #if SICSLOWPAN_CONF_COMPRESS_EXT_HDR
   struct uip_ext_hdr *exthdr;
 #endif /* SICSLOWPAN_CONF_COMPRESS_EXT_HDR */
@@ -1187,7 +1192,10 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
     SICSLOWPAN_IP_BUF(buf)->tcflow = ((tmp >> 2) & 0x30) | (tmp << 6) |
       (SICSLOWPAN_IP_BUF(buf)->tcflow & 0x0f);
   } else {
-    LOG_WARN("Hudson send ICMP dropped msg here");
+    LOG_WARN("Cannot decompress traffic class or flow label");
+    // Cannot send ICMP message here bc addr decompression is later in code
+    // I think I can just let the code continue though
+    decompression_failed = true;
   }
 
 #endif /* SICSLOWPAN_CONF_COMP_TC_FL_HL */
@@ -1213,7 +1221,8 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
     SICSLOWPAN_IP_BUF(buf)->ttl = *hc06_ptr;
     hc06_ptr += 1;
   } else {
-    LOG_WARN("HUDSON send ICMP dropped packet");
+    LOG_WARN("Failed to decompress TTL");
+    decompression_failed = true;
   }
 #endif /* SICSLOWPAN_CONF_COMP_TC_FL_HL */
 
@@ -1239,12 +1248,21 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
                     tmp != 0 ? context->prefix : NULL, unc_ctxconf[tmp],
                     (uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));
 #else
-    LOG_WARN("HUDSON send icmp dropped here");
+    LOG_WARN("Received packet with context based compression, cant decompress");
+    // Cant send ICMP without address, return
+    return;
 #endif /* SICSLOWPAN_CONF_STATEFUL_COMP */
   } else {
     /* no compression and link local */
     uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, llprefix, unc_llconf[tmp],
                     (uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));
+  }
+  // Source address has been decompressed, now I can send ICMP errors!
+  if (decompression_failed) {
+    LOG_WARN("Sending ICMP dropped msg");
+#if CAPABILITY_LEVEL > 1
+    send_icmp6_6lo_not_supported(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, CAPABILITY_LEVEL);
+#endif /* CAPABILITY_LEVEL > 1 */
   }
 
   /* Destination address */
@@ -1256,7 +1274,9 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
     /* context based multicast compression */
     if(iphc1 & SICSLOWPAN_IPHC_DAC) {
       /* TODO: implement this */
-      LOG_WARN("HUDSON add ICMP dropped here");
+      LOG_WARN("Always send ICMP failed error here.");
+      // Hudson TODO: Implement this to improve code size measurements
+      decompression_failed = true;
     } else {
       /* non-context based multicast compression - */
       /* DAM_00: 128 bits  */
@@ -1290,7 +1310,10 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
                       (uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
     } else {
 #else
-    LOG_WARN("HUDSON send ICMP dropped msg here");
+    LOG_WARN("Cannot decompress context based dst addr, sending ICMP err");
+#if CAPABILITY_LEVEL > 1
+    send_icmp6_6lo_not_supported(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, CAPABILITY_LEVEL);
+#endif /* CAPABILITY_LEVEL > 1 */
 #endif /* SICSLOWPAN_CONF_STATEFUL_COMP */
       /* not context based => link local M = 0, DAC = 0 - same as SAC */
       uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->destipaddr, llprefix,
@@ -1363,7 +1386,10 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
     LOG_INFO("Uncompressed EXT hdr: %d len:%d exhdrlen:%d (calc: %d)\n",
            proto, len, exthdr->len, (exthdr->len + 1) * 8);
 #else
-    LOG_WARN("HUDSON - Send ICMP dropped msg here.");
+    LOG_WARN("Sending ICMP dropped msg");
+#if CAPABILITY_LEVEL > 1
+    send_icmp6_6lo_not_supported(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, CAPABILITY_LEVEL);
+#endif /* CAPABILITY_LEVEL > 1 */
 #endif /* SICSLOWPAN_CONF_COMPRESS_EXT_HDR */
   }
 
@@ -1439,7 +1465,10 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
 
     uncomp_hdr_len += UIP_UDPH_LEN;
 #else
-    LOG_WARN("HUDSON - Send ICMP dropped msg here.");
+    LOG_WARN("Sending ICMP dropped msg");
+#if CAPABILITY_LEVEL > 1
+    send_icmp6_6lo_not_supported(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, CAPABILITY_LEVEL);
+#endif /* CAPABILITY_LEVEL > 1 */
 #endif /* SICSLOWPAN_CONF_COMPRESS_UDP */
   }
 
@@ -1992,6 +2021,13 @@ input(void)
   } else {
     LOG_ERR("input: unknown dispatch: 0x%02x, or IPHC disabled\n",
              PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH]);
+#if CAPABILITY_LEVEL > 1
+    (void)0; //tmp
+    // Unknown dispatch, can't respond (should never happen)
+#else
+    (void)0; //tmp
+    // Cannot respond without decompressing the address, which I can't do!
+#endif /* CAPABILITY_LEVEL > 1 */
     return;
   }
 
@@ -2158,4 +2194,16 @@ const struct network_driver sicslowpan_driver = {
   output
 };
 /*--------------------------------------------------------------------*/
+void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code) {
+  unsigned char *buffer;
+  buffer = UIP_ICMP_PAYLOAD;
+  buffer[0] = buffer[1] = 0;
+
+  LOG_INFO("sending ICMP 6Lo unsupported error");
+  LOG_INFO_6ADDR(addr);
+  LOG_INFO_("\n");
+
+  uip_icmp6_send(addr, ICMP6_6LO_UNSUPPORTED,
+                 icmp_code, 2); //TODO is that len right?
+}
 /** @} */

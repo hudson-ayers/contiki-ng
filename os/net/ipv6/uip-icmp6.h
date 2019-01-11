@@ -70,8 +70,18 @@
 #define ICMP6_PRIV_EXP_201              201  /**< Private Experimentation */
 #define ICMP6_ROLL_TM    ICMP6_PRIV_EXP_200  /**< ROLL Trickle Multicast */
 #define ICMP6_ESMRF      ICMP6_PRIV_EXP_201  /**< ESMRF Multicast */
+
+#define ICMP6_6LO_UNSUPPORTED           253 /**< 6LoWPAN Capability Level unsupported*/
 /** @} */
 
+/** \name ICMPv6 6LoWPAN Capability unsupported codes */
+/** @{ */
+#define ICMP6_6LO_LEVEL_0         0 /**< Capability Level 0 */
+#define ICMP6_6LO_LEVEL_1         1 /**< Capability Level 1 */
+#define ICMP6_6LO_LEVEL_2         2 /**< Capability Level 2 */
+#define ICMP6_6LO_LEVEL_3         3 /**< Capability Level 3 */
+#define ICMP6_6LO_LEVEL_4         4 /**< Capability Level 4 */
+#define ICMP6_6LO_LEVEL_5         5 /**< Capability Level 5 */
 
 /** \name ICMPv6 Destination Unreachable message codes*/
 /** @{ */
@@ -116,7 +126,7 @@ typedef struct uip_icmp6_error{
  * \param param 32 bit parameter of the error message, semantic depends on error
  */
 void
-uip_icmp6_error_output(uint8_t type, uint8_t code, uint32_t param); 
+uip_icmp6_error_output(uint8_t type, uint8_t code, uint32_t param);
 
 /**
  * \brief Send an icmpv6 message

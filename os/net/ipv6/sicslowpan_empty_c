@@ -1,0 +1,45 @@
+#include <string.h>
+
+#include "contiki.h"
+#include "dev/watchdog.h"
+#include "net/link-stats.h"
+#include "net/ipv6/uipopt.h"
+#include "net/ipv6/tcpip.h"
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uip-ds6.h"
+#include "net/ipv6/uipbuf.h"
+#include "net/ipv6/sicslowpan.h"
+#include "net/netstack.h"
+#include "net/packetbuf.h"
+#include "net/queuebuf.h"
+
+#include "net/routing/routing.h"
+#include "net/ipv6/uip-icmp6.h"
+
+static uint8_t
+output(const linkaddr_t *localdest)
+{
+    return 0;
+}
+
+static void
+input(void)
+{
+}
+/** @} */
+
+/*--------------------------------------------------------------------*/
+/* \brief 6lowpan init function (called by the MAC layer)             */
+/*--------------------------------------------------------------------*/
+void
+sicslowpan_init(void)
+{
+}
+/*--------------------------------------------------------------------*/
+const struct network_driver sicslowpan_driver = {
+  "sicslowpan",
+  sicslowpan_init,
+  input,
+  output
+};
+/** @} */

@@ -1,0 +1,10 @@
+#ifndef SICSLOWPAN_H_
+#define SICSLOWPAN_H_
+
+#include "net/ipv6/uip.h"
+#include "net/mac/mac.h"
+
+
+extern const struct network_driver sicslowpan_driver;
+
+#endif /* SICSLOWPAN_H_ */

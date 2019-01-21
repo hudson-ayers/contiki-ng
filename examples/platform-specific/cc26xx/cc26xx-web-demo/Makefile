@@ -6,6 +6,7 @@ all: $(CONTIKI_PROJECT)
 # Get capability level from environment variable so my script to
 # get size for all levels works
 CFLAGS += -DCAPABILITY_LEVEL=$(CAP_LEVEL)
+CFLAGS += -DSICSLOWPAN_CONF_ICMP_ERRORS=$(ICMP_MSGS)
 
 PLATFORMS_ONLY = srf06-cc26xx
 

@@ -44,9 +44,15 @@
 
 #define SICSLOWPAN_CONF_FRAG 1 // Could make a level with no frag..?
 
-// Comment in the line below to set the capability level here instead of
+// To set the capability level here instead of
 // via the environment variable that is pulled into the Makefile
-//#define CAPABILITY_LEVEL 1
+#ifndef CAPABILITY_LEVEL
+#define CAPABILITY_LEVEL 3
+#endif /* Capability Level Defined */
+
+#ifndef SICSLOWPAN_CONF_ICMP_ERRORS
+#define SICSLOWPAN_CONF_ICMP_ERRORS 1 // Turns on ICMP errors in response un-decodable 6lowpan messages
+#endif /* SICSLOWPAN_CONF_ICMP_ERRORS */
 
 /* Capability Spectrum */
 #if CAPABILITY_LEVEL == 0

@@ -285,6 +285,7 @@ struct sicslowpan_frag_info {
 static struct sicslowpan_frag_info frag_info[SICSLOWPAN_REASS_CONTEXTS];
 
 void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code);
+int iphc_uncompress_src_addr_only(uint8_t *buf, uint16_t ip_len);
 
 struct sicslowpan_frag_buf {
   /* the index of the frag_info */
@@ -1249,7 +1250,7 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)
                     (uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));
 #else
     LOG_WARN("Received packet with context based compression, cant decompress");
-    // Cant send ICMP without address, return
+    // Cant send ICMP without address, return (shouldnt happen)
     return;
 #endif /* SICSLOWPAN_CONF_STATEFUL_COMP */
   } else {
@@ -2025,7 +2026,11 @@ input(void)
     (void)0; //tmp
     // Unknown dispatch, can't respond (should never happen)
 #else
-    (void)0; //tmp
+    int err = iphc_uncompress_src_addr_only(buffer, frag_size); //tmp
+    if (err == 0) {
+      send_icmp6_6lo_not_supported(&SICSLOWPAN_IP_BUF(buffer)->srcipaddr, CAPABILITY_LEVEL);
+    }
+    // Insert code to decompress src addr only here
     // Cannot respond without decompressing the address, which I can't do!
 #endif /* CAPABILITY_LEVEL > 1 */
     return;
@@ -2195,6 +2200,7 @@ const struct network_driver sicslowpan_driver = {
 };
 /*--------------------------------------------------------------------*/
 void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code) {
+#if SICSLOWPAN_CONF_ICMP_ERRORS
   unsigned char *buffer;
   buffer = UIP_ICMP_PAYLOAD;
   buffer[0] = buffer[1] = 0;
@@ -2205,5 +2211,87 @@ void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code) {
 
   uip_icmp6_send(addr, ICMP6_6LO_UNSUPPORTED,
                  icmp_code, 2); //TODO is that len right?
+#endif /* SICSLOWPAN_CONF_ICMP_ERRORS */
+}
+
+int iphc_uncompress_src_addr_only(uint8_t *buf, uint16_t ip_len) {
+#if SICSLOWPAN_CONF_ICMP_ERRORS
+#if SICSLOWPAN_CONF_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
+  uint8_t tmp, iphc0, iphc1;
+  /** pointer to the byte where to write next inline field. */
+  static uint8_t *hc06_ptr;
+
+  /* at least two byte will be used for the encoding */
+  hc06_ptr = packetbuf_ptr + packetbuf_hdr_len + 2;
+
+  iphc0 = PACKETBUF_IPHC_BUF[0];
+  iphc1 = PACKETBUF_IPHC_BUF[1];
+
+  /* Though we are not decompressing the whole packet, need to determine where the address begins */
+  if((iphc0 & SICSLOWPAN_IPHC_FL_C) == 0) {
+    /* Flow label are carried inline */
+    if((iphc0 & SICSLOWPAN_IPHC_TC_C) == 0) {
+      /* Traffic class is carried inline */
+      hc06_ptr += 4;
+    } else {
+      /* Traffic class is compressed (set version and no TC)*/
+      hc06_ptr += 3;
+    }
+  } else {
+    /* Version is always 6! */
+    /* Version and flow label are compressed */
+    if((iphc0 & SICSLOWPAN_IPHC_TC_C) == 0) {
+      /* Traffic class is inline */
+        hc06_ptr += 1;
+    }
+  }
+
+  if((iphc0 & 0x03) == SICSLOWPAN_IPHC_TTL_I) {
+    hc06_ptr += 1;
+  }
+
+  /* put the source address compression mode SAM in the tmp var */
+  tmp = ((iphc1 & SICSLOWPAN_IPHC_SAM_11) >> SICSLOWPAN_IPHC_SAM_BIT) & 0x03;
+
+  /* context based compression */
+  if(iphc1 & SICSLOWPAN_IPHC_SAC) {
+    /* cant respond */
+    return -1;
+  } else {
+    /* code copied from uncompress_addr */
+    const uint8_t unc_llconf[] = {0x0f,0x28,0x22,0x20};
+    uint8_t pref_post_count = unc_llconf[tmp];
+    const uint8_t prefix[] = {0xfe, 0x80};
+    uip_lladdr_t *lladdr = (uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER);
+    uip_ipaddr_t *ipaddr = &SICSLOWPAN_IP_BUF(buf)->srcipaddr;
+
+    uint8_t prefcount = pref_post_count >> 4;
+    uint8_t postcount = pref_post_count & 0x0f;
+    /* full nibble 15 => 16 */
+    prefcount = prefcount == 15 ? 16 : prefcount;
+    postcount = postcount == 15 ? 16 : postcount;
+
+    if(prefcount > 0) {
+      memcpy(ipaddr, prefix, prefcount);
+    }
+    if(prefcount + postcount < 16) {
+      memset(&ipaddr->u8[prefcount], 0, 16 - (prefcount + postcount));
+    }
+    if(postcount > 0) {
+      memcpy(&ipaddr->u8[16 - postcount], hc06_ptr, postcount);
+      if(postcount == 2 && prefcount < 11) {
+        /* 16 bits uncompression => 0000:00ff:fe00:XXXX */
+        ipaddr->u8[11] = 0xff;
+        ipaddr->u8[12] = 0xfe;
+      }
+      hc06_ptr += postcount;
+    } else if (prefcount > 0) {
+      /* no IID based configuration if no prefix and no data => unspec */
+      uip_ds6_set_addr_iid(ipaddr, lladdr);
+    }
+  }
+#endif /* SICSLOWPAN_COMPRESSION_IPV6 */
+#endif /* SICSLOWPAN_CONF_ICMP_ERRORS */
+  return 0;
 }
 /** @} */

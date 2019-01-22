@@ -47,6 +47,11 @@
 /* Enable ND RS messages */
 #define UIP_CONF_ROUTER 0
 
+/* Enable dynamic capability selection on send */
+#ifndef SICSLOWPAN_CONF_CHECK_CAP
+#define SICSLOWPAN_CONF_CHECK_CAP 1
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
+
 // To set the capability level here instead of
 // via the environment variable that is pulled into the Makefile
 #ifndef CAPABILITY_LEVEL
@@ -88,7 +93,6 @@
 #define SICSLOWPAN_CONF_COMPRESS_UDP 0
 #define SICSLOWPAN_CONF_COMP_TC_FL_HL 1
 #define SICSLOWPAN_CONF_STATEFUL_COMP 1
-// TODO: Tunneled IPv6, headers longer than first fragment
 
 #elif CAPABILITY_LEVEL == 4
 
@@ -111,9 +115,9 @@
 
 /*---------------------------------------------------------------------------*/
 /* Enable Logging */
-#define LOG_CONF_LEVEL_TCPIP 0
-#define LOG_CONF_LEVL_6LOWPAN 0
-#define LOG_CONF_LEVEL_IPV6 0
+#define LOG_CONF_LEVEL_TCPIP LOG_LEVEL_DBG
+#define LOG_CONF_LEVL_6LOWPAN LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_IPV6 LOG_LEVEL_DBG
 #define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
 #define LOG_CONF_LEVEL_FRAMER LOG_LEVEL_DBG
 

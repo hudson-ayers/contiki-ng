@@ -62,6 +62,8 @@
 /** \brief temporary IP address */
 static uip_ipaddr_t tmp_ipaddr;
 
+static uint8_t rcvd_capability;
+
 LIST(echo_reply_callback_list);
 /*---------------------------------------------------------------------------*/
 /* List of input handlers */
@@ -78,6 +80,9 @@ input_handler_lookup(uint8_t type, uint8_t icode)
     if(handler->type == type &&
        (handler->icode == icode ||
         handler->icode == UIP_ICMP6_HANDLER_CODE_ANY)) {
+      if (type == ICMP6_6LO_UNSUPPORTED) {
+        rcvd_capability = icode;
+      }
       return handler;
     }
   }
@@ -333,6 +338,19 @@ echo_reply_input(void)
   return;
 }
 /*---------------------------------------------------------------------------*/
+#if SICSLOWPAN_CONF_CHECK_CAP
+static void
+capability_input(void)
+{
+  uip_ipaddr_t sender;
+  uip_ipaddr_copy(&sender, &UIP_IP_BUF->srcipaddr);
+  set_cap_level(&sender, rcvd_capability);
+
+  uip_clear_buf();
+  return;
+}
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
+/*---------------------------------------------------------------------------*/
 void
 uip_icmp6_echo_reply_callback_add(struct uip_icmp6_echo_reply_notification *n,
                                   uip_icmp6_echo_reply_callback_t c)
@@ -353,6 +371,10 @@ UIP_ICMP6_HANDLER(echo_request_handler, ICMP6_ECHO_REQUEST,
                   UIP_ICMP6_HANDLER_CODE_ANY, echo_request_input);
 UIP_ICMP6_HANDLER(echo_reply_handler, ICMP6_ECHO_REPLY,
                   UIP_ICMP6_HANDLER_CODE_ANY, echo_reply_input);
+#if SICSLOWPAN_CONF_CHECK_CAP
+UIP_ICMP6_HANDLER(capability_handler, ICMP6_6LO_UNSUPPORTED,
+                  UIP_ICMP6_HANDLER_CODE_ANY, capability_input);
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
 /*---------------------------------------------------------------------------*/
 void
 uip_icmp6_init()
@@ -360,6 +382,9 @@ uip_icmp6_init()
   /* Register Echo Request and Reply handlers */
   uip_icmp6_register_input_handler(&echo_request_handler);
   uip_icmp6_register_input_handler(&echo_reply_handler);
+#if SICSLOWPAN_CONF_CHECK_CAP
+  uip_icmp6_register_input_handler(&capability_handler);
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
 }
 /*---------------------------------------------------------------------------*/
 /** @} */

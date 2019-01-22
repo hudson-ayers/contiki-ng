@@ -79,6 +79,9 @@ typedef struct uip_ds6_nbr {
   struct uip_packetqueue_handle packethandle;
 #define UIP_DS6_NBR_PACKET_LIFETIME CLOCK_SECOND * 4
 #endif                          /*UIP_CONF_QUEUE_PKT */
+#if SICSLOWPAN_CONF_CHECK_CAP
+  uint8_t cap_level;
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
 } uip_ds6_nbr_t;
 
 void uip_ds6_neighbors_init(void);
@@ -100,6 +103,11 @@ void uip_ds6_neighbor_periodic(void);
 int uip_ds6_nbr_num(void);
 uip_ds6_nbr_t *uip_ds6_nbr_head(void);
 uip_ds6_nbr_t *uip_ds6_nbr_next(uip_ds6_nbr_t *nbr);
+
+#if SICSLOWPAN_CONF_CHECK_CAP
+void set_cap_level(const uip_ipaddr_t *ipaddr, uint8_t capability);
+uint8_t get_cap_level(const uip_ipaddr_t *ipaddr);
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
 
 #if UIP_ND6_SEND_NS
 /**

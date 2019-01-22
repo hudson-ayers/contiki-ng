@@ -355,4 +355,21 @@ uip_ds6_get_least_lifetime_neighbor(void)
 }
 #endif /* UIP_ND6_SEND_NS */
 /*---------------------------------------------------------------------------*/
+#if SICSLOWPAN_CONF_CHECK_CAP
+void set_cap_level(const uip_ipaddr_t *ipaddr, uint8_t capability){
+  uip_ds6_nbr_t *nbr = uip_ds6_nbr_lookup(ipaddr);
+  if (nbr != NULL) {
+    nbr->cap_level = capability;
+  }
+}
+
+uint8_t get_cap_level(const uip_ipaddr_t *ipaddr){
+  uip_ds6_nbr_t *nbr = uip_ds6_nbr_lookup(ipaddr);
+  if (nbr != NULL) {
+    return nbr->cap_level;
+  }
+  return 0;
+}
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
+/*---------------------------------------------------------------------------*/
 /** @} */

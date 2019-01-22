@@ -1555,7 +1555,7 @@ digest_6lorh_hdr(void)
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * \endverbatim
  */
- #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
+#if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 || SICSLOWPAN_CONF_CHECK_CAP
 static void
 compress_hdr_ipv6(linkaddr_t *link_destaddr)
 {
@@ -1566,7 +1566,7 @@ compress_hdr_ipv6(linkaddr_t *link_destaddr)
   uncomp_hdr_len += UIP_IPH_LEN;
   return;
 }
-#endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 */
+#endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 || SICSLOWPAN_CONF_CHECK_CAP */
 /** @} */
 
 /*--------------------------------------------------------------------*/
@@ -1710,7 +1710,12 @@ output(const linkaddr_t *localdest)
   }
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_6LORH */
 #if SICSLOWPAN_COMPRESSION >= SICSLOWPAN_COMPRESSION_IPHC
-  if(compress_hdr_iphc(&dest) == 0) {
+#if SICSLOWPAN_CONF_CHECK_CAP
+  if (get_cap_level((uip_ipaddr_t*)&dest) < CAPABILITY_LEVEL) {
+    compress_hdr_ipv6(&dest);
+  } else
+#endif /* SICSLOWPAN_CONF_CHECK_CAP */
+      if(compress_hdr_iphc(&dest) == 0) {
     /* Warning should already be issued by function above */
     return 0;
   }

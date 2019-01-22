@@ -153,6 +153,45 @@ create_llao(uint8_t *llao, uint8_t type) {
 }
 #endif /* UIP_ND6_SEND_NA */
 /*------------------------------------------------------------------*/
+#if !UIP_CONF_ROUTER /* !UIP_CONF_ROUTER */
+#if UIP_CONF_6CIO /* UIP_CONF_6CIO */
+/* create 6CIO Option (see RFC 7400)
+ * This assigns flags 14, 15, and 16 to store the capability level
+ * of a node, encoded in binary.
+ * This could easily be extended to support additional levels by
+ * reserving flags 8-13 for more bits
+ *   0                   1                   2                   3
+ *   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *  |     Type      |   Length = 1  |_________________________|CAP|G|
+ *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *  |_______________________________________________________________|
+ *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *
+ * Bc RFC 7400 states that 0 flags should indicate no capability used,
+ * we also increment all capability values by 1 before storing them
+ * in the 3 cap bits.
+ * Thus, Capability 0 is encoded as 00000010 in the 2nd byte of the data
+ * section of the 6cio option, capability level 2 as 00000110.
+ * Encoding all 0s in these 3 bits would indicate no knowledge of
+ * capability levels, and thus could be considered as equivalent to full
+ * implementation of RFC 6282.
+ */
+static void
+create_6cio(uint8_t *cio, uint8_t capability) {
+  cio[UIP_ND6_OPT_TYPE_OFFSET] = 36; // 6cio type per rfc 7400
+  cio[UIP_ND6_OPT_LEN_OFFSET] = UIP_ND6_OPT_6CIO_LEN >> 3;
+  /* zero out all flags */
+  memset(&cio[UIP_ND6_OPT_DATA_OFFSET], 0,
+         UIP_ND6_OPT_DATA_OFFSET -  UIP_ND6_OPT_DATA_OFFSET);
+  if (capability > 6) {
+    LOG_ERR("Invalid Capability level passed.\n");
+  }
+  cio[UIP_ND6_OPT_DATA_OFFSET] = (capability + 1) << 1;
+}
+#endif /* UIP_CONF_6CIO */
+#endif /* !UIP_CONF_ROUTER */
+/*------------------------------------------------------------------*/
  /**
  * Neighbor Solicitation Processing
  *
@@ -827,14 +866,30 @@ uip_nd6_rs_output(void)
 
   if(uip_is_addr_unspecified(&UIP_IP_BUF->srcipaddr)) {
     UIP_IP_BUF->len[1] = UIP_ICMPH_LEN + UIP_ND6_RS_LEN;
+#if UIP_CONF_6CIO /* UIP_CONF_6CIO */
+    uip_len = uip_l3_icmp_hdr_len + UIP_ND6_RS_LEN + UIP_ND6_OPT_6CIO_LEN;
+    create_6cio(&uip_buf[uip_l2_l3_icmp_hdr_len + UIP_ND6_RS_LEN +
+                UIP_ND6_OPT_LLAO_LEN], CAPABILITY_LEVEL);
+#else
     uip_len = uip_l3_icmp_hdr_len + UIP_ND6_RS_LEN;
+#endif /* UIP_CONF_6CIO */
   } else {
     uip_len = uip_l3_icmp_hdr_len + UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN;
+#if UIP_CONF_6CIO /* UIP_CONF_6CIO */
+    UIP_IP_BUF->len[1] =
+      UIP_ICMPH_LEN + UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN + UIP_ND6_OPT_6CIO_LEN;
+
+    create_llao(&uip_buf[uip_l2_l3_icmp_hdr_len + UIP_ND6_RS_LEN],
+                UIP_ND6_OPT_SLLAO);
+    create_6cio(&uip_buf[uip_l2_l3_icmp_hdr_len + UIP_ND6_RS_LEN +
+                UIP_ND6_OPT_LLAO_LEN], CAPABILITY_LEVEL);
+#else
     UIP_IP_BUF->len[1] =
       UIP_ICMPH_LEN + UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN;
 
     create_llao(&uip_buf[uip_l2_l3_icmp_hdr_len + UIP_ND6_RS_LEN],
                 UIP_ND6_OPT_SLLAO);
+#endif /* UIP_CONF_6CIO */
   }
 
   UIP_ICMP_BUF->icmpchksum = 0;

@@ -42,7 +42,10 @@
 
 /*---------------------------------------------------------------------------*/
 
-#define SICSLOWPAN_CONF_FRAG 1 // Could make a level with no frag..?
+#define SICSLOWPAN_CONF_FRAG 1
+
+/* Enable ND RS messages */
+#define UIP_CONF_ROUTER 0
 
 // To set the capability level here instead of
 // via the environment variable that is pulled into the Makefile
@@ -53,6 +56,10 @@
 #ifndef SICSLOWPAN_CONF_ICMP_ERRORS
 #define SICSLOWPAN_CONF_ICMP_ERRORS 1 // Turns on ICMP errors in response un-decodable 6lowpan messages
 #endif /* SICSLOWPAN_CONF_ICMP_ERRORS */
+
+#ifndef UIP_CONF_6CIO
+#define UIP_CONF_6CIO 1 // Router solicitation messages will now indicate capability level
+#endif /* UIP_CONF_6CIO */
 
 /* Capability Spectrum */
 #if CAPABILITY_LEVEL == 0
@@ -104,9 +111,9 @@
 
 /*---------------------------------------------------------------------------*/
 /* Enable Logging */
-#define LOG_CONF_LEVEL_TCPIP LOG_LEVEL_DBG
-#define LOG_CONF_LEVL_6LOWPAN LOG_LEVEL_DBG
-#define LOG_CONF_LEVEL_IPV6 LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_TCPIP 0
+#define LOG_CONF_LEVL_6LOWPAN 0
+#define LOG_CONF_LEVEL_IPV6 0
 #define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
 #define LOG_CONF_LEVEL_FRAMER LOG_LEVEL_DBG
 

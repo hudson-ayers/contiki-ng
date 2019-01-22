@@ -245,6 +245,11 @@ be added regardless of their reachability and liveness.  */
 #endif /*UIP_CONF_LL_802154*/
 /** @} */
 
+#if !UIP_CONF_ROUTER /* !UIP_CONF_ROUTER */
+#define UIP_ND6_OPT_6CIO_LEN           8 // per RFC 7400
+#define UIP_ND6_OPT_6CIO_CAP_OFFSET    1
+#endif /* !UIP_CONF_ROUTER */
+
 
 /** \name Neighbor Advertisement flags masks */
 /** @{ */

@@ -101,3 +101,18 @@ echo "${DIFF2}"
 echo "${DIFF3}"
 echo "${DIFF4}"
 echo "${DIFF5}"
+
+DIFF0=$((LEVEL0_1_1 - LEVEL0_0_0))
+DIFF1=$((LEVEL1_1_1 - LEVEL1_0_0))
+DIFF2=$((LEVEL2_1_1 - LEVEL2_0_0))
+DIFF3=$((LEVEL3_1_1 - LEVEL3_0_0))
+DIFF4=$((LEVEL4_1_1 - LEVEL4_0_0))
+DIFF5=$((LEVEL5_1_1 - LEVEL5_0_0))
+echo "Difference at each level (base to all additions):"
+echo "${DIFF0}"
+echo "${DIFF1}"
+echo "${DIFF2}"
+echo "${DIFF3}"
+echo "${DIFF4}"
+echo "${DIFF5}"
+

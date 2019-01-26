@@ -58,6 +58,9 @@
 #define CAPABILITY_LEVEL 3
 #endif /* Capability Level Defined */
 
+//tmp -- delete me
+#define UIP_CONF_IPV6_QUEUE_PKT 1
+
 #ifndef SICSLOWPAN_CONF_ICMP_ERRORS
 #define SICSLOWPAN_CONF_ICMP_ERRORS 1 // Turns on ICMP errors in response un-decodable 6lowpan messages
 #endif /* SICSLOWPAN_CONF_ICMP_ERRORS */

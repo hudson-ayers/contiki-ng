@@ -257,8 +257,8 @@ static uint16_t my_tag;
 #define SICSLOWPAN_FRAGMENT_SIZE (MAC_MAX_PAYLOAD - 15)
 #endif
 
-/* Assuming that the worst growth for uncompression is 38 bytes */
-#define SICSLOWPAN_FIRST_FRAGMENT_SIZE (SICSLOWPAN_FRAGMENT_SIZE + 38)
+/* Assuming that the worst growth for uncompression is 50 bytes */
+#define SICSLOWPAN_FIRST_FRAGMENT_SIZE (SICSLOWPAN_FRAGMENT_SIZE + 50)
 
 /* all information needed for reassembly */
 struct sicslowpan_frag_info {
@@ -719,7 +719,7 @@ compress_hdr_iphc(linkaddr_t *link_destaddr)
   /* Check if there is enough space for the compressed IPv6 header, in the
    * worst case (least compressed case). Extension headers and transport
    * layer will be checked when they are compressed. */
-  CHECK_BUFFER_SPACE(38);
+  CHECK_BUFFER_SPACE(50);
 
   /*
    * As we copy some bit-length fields, in the IPHC encoding bytes,

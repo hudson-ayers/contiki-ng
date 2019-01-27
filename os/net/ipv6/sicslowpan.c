@@ -2223,7 +2223,6 @@ void send_icmp6_6lo_not_supported(uip_ipaddr_t *addr, int icmp_code) {
 }
 
 int iphc_uncompress_src_addr_only(uint8_t *buf, uint16_t ip_len) {
-#if SICSLOWPAN_CONF_ICMP_ERRORS
 #if SICSLOWPAN_CONF_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
   uint8_t tmp, iphc0, iphc1;
   /** pointer to the byte where to write next inline field. */
@@ -2299,7 +2298,6 @@ int iphc_uncompress_src_addr_only(uint8_t *buf, uint16_t ip_len) {
     }
   }
 #endif /* SICSLOWPAN_COMPRESSION_IPV6 */
-#endif /* SICSLOWPAN_CONF_ICMP_ERRORS */
   return 0;
 }
 /** @} */
